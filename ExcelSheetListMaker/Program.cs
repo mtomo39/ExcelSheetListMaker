@@ -25,7 +25,7 @@ namespace ExcelSheetListMaker
 
             // 該当する拡張子のファイルパスを抽出する
             string[] excelExtentions = { ".xlsx", ".xlsm", ".xlsb", ".xls", ".xls" };
-            var excelFiles = files.Where(x => excelExtentions.Contains(Path.GetExtension(x), StringComparer.OrdinalIgnoreCase));
+            var excelFiles = files.Where(x => !Path.GetFileName(x).StartsWith("~") & excelExtentions.Contains(Path.GetExtension(x), StringComparer.OrdinalIgnoreCase));
 
             if(excelFiles.ToList().Count == 0)
             {
@@ -34,6 +34,7 @@ namespace ExcelSheetListMaker
 
 
             StringBuilder sb = new StringBuilder();
+            sb.Append("パス\tフォルダ\tファイル\tシート\r\n");
 
             foreach (var file in excelFiles)
             {
@@ -74,6 +75,7 @@ namespace ExcelSheetListMaker
             }
             catch(Exception ex)
             {
+                Console.Error.WriteLine(path);
                 Console.Error.WriteLine(ex.ToString());
             }
 
