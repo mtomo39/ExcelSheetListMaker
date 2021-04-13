@@ -27,16 +27,15 @@ namespace ExcelSheetListMaker
             string[] excelExtentions = { ".xlsx", ".xlsm", ".xlsb", ".xls", ".xls" };
             var excelFiles = files.Where(x => !Path.GetFileName(x).StartsWith("~") && excelExtentions.Contains(Path.GetExtension(x), StringComparer.OrdinalIgnoreCase));
 
-            if(excelFiles.ToList().Count == 0)
+            if(!excelFiles.Any())
             {
                 return;
             }
 
-
             StringBuilder sb = new StringBuilder();
             sb.Append("パス\tフォルダ\tファイル\tシート\r\n");
 
-            foreach (var file in excelFiles)
+            foreach (var file in excelFiles.OrderBy(x => x))
             {
                 var ds = ReadExcelData(file);
                 if(ds == null)
