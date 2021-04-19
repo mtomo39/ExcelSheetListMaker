@@ -16,6 +16,12 @@ namespace ExcelSheetListMaker
         [STAThreadAttribute]
         static void Main(string[] args)
         {
+            Task task = ExecuteAsync(args);
+            task.Wait();
+        }
+
+        static async Task ExecuteAsync(string[] args)
+        {
             // コマンドライン引数からファイルパス、フォルダパスを取得する
             var files = args.Where(x => File.Exists(x)).ToList();
             var directories = args.Where(x => Directory.Exists(x)).ToList();
@@ -27,39 +33,48 @@ namespace ExcelSheetListMaker
             string[] excelExtentions = { ".xlsx", ".xlsm", ".xlsb", ".xls", ".xls" };
             var excelFiles = files.Where(x => !Path.GetFileName(x).StartsWith("~") && excelExtentions.Contains(Path.GetExtension(x), StringComparer.OrdinalIgnoreCase));
 
-            if(!excelFiles.Any())
+            if (!excelFiles.Any())
             {
                 return;
             }
 
+
+            ExcelData[] excelDatas = await Task.WhenAll(excelFiles.OrderBy(x => x).Select(ReadExcelDataAsinc));
+
             StringBuilder sb = new StringBuilder();
             sb.Append("パス\tフォルダ\tファイル\tシート\r\n");
 
-            foreach (var file in excelFiles.OrderBy(x => x))
+            foreach (var excelData in excelDatas)
             {
-                var ds = ReadExcelData(file);
-                if(ds == null)
+                if (excelData.Sheets == null)
                 {
                     continue;
                 }
 
-                foreach(DataTable tbl in ds.Tables)
+                foreach (DataTable tbl in excelData.Sheets.Tables)
                 {
-                    sb.Append(file);
+                    sb.Append(excelData.path);
                     sb.Append("\t");
-                    sb.Append(Path.GetDirectoryName(file));
+                    sb.Append(Path.GetDirectoryName(excelData.path));
                     sb.Append("\t");
-                    sb.Append(Path.GetFileName(file));
+                    sb.Append(Path.GetFileName(excelData.path));
                     sb.Append("\t");
                     sb.Append(tbl.TableName);
                     sb.Append("\r\n");
                 }
             }
 
-            Clipboard.SetText(sb.ToString());          
+            Clipboard.SetText(sb.ToString());
         }
 
-        static DataSet ReadExcelData(string path)
+
+        static async Task<ExcelData> ReadExcelDataAsinc(string path)
+        {
+            return await Task.Run<ExcelData>(() => ReadExcelData(path));
+        }
+
+
+        static ExcelData ReadExcelData(string path)
         {
             DataSet ds = null;
             try
@@ -76,9 +91,16 @@ namespace ExcelSheetListMaker
             {
                 Console.Error.WriteLine(path);
                 Console.Error.WriteLine(ex.ToString());
+                Console.Read();
             }
 
-            return ds;
+            return new ExcelData { path = path, Sheets = ds };
         }
+    }
+
+    class ExcelData
+    {
+        public string path;
+        public DataSet Sheets;
     }
 }
