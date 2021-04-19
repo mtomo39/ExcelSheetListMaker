@@ -13,14 +13,17 @@ namespace ExcelSheetListMaker
 {
     class Program
     {
-        [STAThreadAttribute]
+        [STAThread]
         static void Main(string[] args)
         {
-            Task task = ExecuteAsync(args);
-            task.Wait();
+            var excelFiles = GetExcelFiles(args);
+
+            Task<string> task = GetExcelSheetDatasAsync(excelFiles);
+
+            Clipboard.SetText(task.Result);
         }
 
-        static async Task ExecuteAsync(string[] args)
+        static IEnumerable<string> GetExcelFiles(string[] args)
         {
             // コマンドライン引数からファイルパス、フォルダパスを取得する
             var files = args.Where(x => File.Exists(x)).ToList();
@@ -33,11 +36,16 @@ namespace ExcelSheetListMaker
             string[] excelExtentions = { ".xlsx", ".xlsm", ".xlsb", ".xls", ".xls" };
             var excelFiles = files.Where(x => !Path.GetFileName(x).StartsWith("~") && excelExtentions.Contains(Path.GetExtension(x), StringComparer.OrdinalIgnoreCase));
 
+            return excelFiles;
+        }
+
+
+        static async Task<string> GetExcelSheetDatasAsync(IEnumerable<string> excelFiles)
+        {
             if (!excelFiles.Any())
             {
-                return;
+                return string.Empty;
             }
-
 
             ExcelData[] excelDatas = await Task.WhenAll(excelFiles.OrderBy(x => x).Select(ReadExcelDataAsinc));
 
@@ -64,7 +72,7 @@ namespace ExcelSheetListMaker
                 }
             }
 
-            Clipboard.SetText(sb.ToString());
+           return sb.ToString();
         }
 
 
@@ -91,7 +99,6 @@ namespace ExcelSheetListMaker
             {
                 Console.Error.WriteLine(path);
                 Console.Error.WriteLine(ex.ToString());
-                Console.Read();
             }
 
             return new ExcelData { path = path, Sheets = ds };
