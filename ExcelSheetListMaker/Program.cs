@@ -47,7 +47,7 @@ namespace ExcelSheetListMaker
                 return string.Empty;
             }
 
-            ExcelData[] excelDatas = await Task.WhenAll(excelFiles.OrderBy(x => x).Select(ReadExcelDataAsinc));
+            ExcelData[] excelDatas = await Task.WhenAll(excelFiles.OrderBy(x => x).Select(ReadExcelDataAsync));
 
             StringBuilder sb = new StringBuilder();
             sb.Append("パス\tフォルダ\tファイル\tシート\r\n");
@@ -76,7 +76,7 @@ namespace ExcelSheetListMaker
         }
 
 
-        static async Task<ExcelData> ReadExcelDataAsinc(string path)
+        static async Task<ExcelData> ReadExcelDataAsync(string path)
         {
             return await Task.Run<ExcelData>(() => ReadExcelData(path));
         }
