@@ -107,7 +107,7 @@ namespace ExcelSheetListMaker
 
     class ExcelData
     {
-        public string path;
-        public DataSet Sheets;
+        public string path { get; set; }
+        public DataSet Sheets { get; set; }
     }
 }
