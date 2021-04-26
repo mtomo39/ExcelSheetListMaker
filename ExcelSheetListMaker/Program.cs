@@ -99,6 +99,7 @@ namespace ExcelSheetListMaker
             {
                 Console.Error.WriteLine(path);
                 Console.Error.WriteLine(ex.ToString());
+                Console.ReadKey();
             }
 
             return new ExcelData { path = path, Sheets = ds };
