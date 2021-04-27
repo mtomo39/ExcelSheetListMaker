@@ -72,38 +72,59 @@ namespace ExcelSheetListMaker
                 }
             }
 
-           return sb.ToString();
+            return sb.ToString();
         }
 
 
         static async Task<ExcelData> ReadExcelDataAsync(string path)
         {
-            return await Task.Run<ExcelData>(() => ReadExcelData(path));
+#if DEBUG
+            await AppendWriteLineAsync($"[Start] {path}");
+#endif
+            ExcelData result = null;
+
+            try
+            {
+                result = await Task.Run<ExcelData>(() => ReadExcelData(path));
+
+            }
+            catch (Exception ex)
+            {
+                await AppendWriteLineAsync($"{path}\r\n{ex.ToString()}");
+                throw;
+            }
+
+#if DEBUG
+            await AppendWriteLineAsync($"[End  ] {path}");
+#endif
+
+            return result;
         }
 
 
         static ExcelData ReadExcelData(string path)
         {
             DataSet ds = null;
-            try
-            {
-                using(var stream = File.Open(path, FileMode.Open, FileAccess.Read)){
-                    using(var reader = ExcelReaderFactory.CreateReader(stream))
-                    {
-                        ds = reader.AsDataSet();
-                    }
-                }
 
-            }
-            catch(Exception ex)
+            using (var stream = File.Open(path, FileMode.Open, FileAccess.Read))
             {
-                Console.Error.WriteLine(path);
-                Console.Error.WriteLine(ex.ToString());
-                Console.ReadKey();
+                using (var reader = ExcelReaderFactory.CreateReader(stream))
+                {
+                    ds = reader.AsDataSet();
+                }
             }
 
             return new ExcelData { path = path, Sheets = ds };
         }
+
+        static async Task AppendWriteLineAsync(string content)
+        {
+            using (var writer = new StreamWriter(path: @".\log.txt", append: true, encoding: Encoding.GetEncoding("shift_jis")))
+            {
+                await writer.WriteLineAsync($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] {content}");
+            }
+        }
+
     }
 
     class ExcelData
@@ -111,4 +132,5 @@ namespace ExcelSheetListMaker
         public string path { get; set; }
         public DataSet Sheets { get; set; }
     }
+
 }
